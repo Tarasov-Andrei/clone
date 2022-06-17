@@ -1,0 +1,39 @@
+{
+    "configurations": [
+        {
+            "name": "ESP-IDF",
+            "compilerPath": "D:\\ESP32\\idf_tools_path\\tools\\xtensa-esp32-elf\\esp-2021r2-patch2-8.4.0\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "includePath": [
+               // "D:/ESP32/esp/esp-idf/components/driver/include/driver",
+                "${workspaceFolder}/build/config/**",
+                "${workspaceFolder}/components/**",
+                "${config:idf.espIdfPath}/components/**",
+                "${config:idf.espIdfPathWin}/components/**",
+                "${config:idf.espAdfPath}/components/**",
+                "${config:idf.espAdfPathWin}/components/**",
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/components/include/**"
+            ],
+            "browse": {
+                "path": [
+                    //"${workspaceFolder}/build/config",
+                    "${workspaceFolder}/components",
+                    //"${config:idf.espIdfPath}/components/**",
+                    "${config:idf.espIdfPathWin}/components",
+                    "${config:idf.espAdfPath}/components",
+                    "${config:idf.espAdfPathWin}/components",
+                    "${workspaceFolder}",
+                    //"D:/ESP32/esp/esp-idf/components/driver/include/driver"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "intelliSenseMode": "${default}",
+            "defines": [
+                "portTICK_PERIOD_MS = configTICK_RATE_HZ "
+            ]
+        }
+    ],
+    "version": 4
+}
