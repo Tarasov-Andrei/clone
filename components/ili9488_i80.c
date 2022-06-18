@@ -1,5 +1,4 @@
 #include "ili9488_i80.h"
-
 #include "lcd_i80_bus.h"
 #include "sdkconfig.h"
 #include "stdio.h"
@@ -78,10 +77,10 @@ static uint16_t lcd_h = 0;
 
 static void lcd_send_cmd(uint8_t cmd)
 {
-    GPIO.out_w1tc = (1 << LCD_DC); // DC -> 0
     while (!(i2s.state.tx_idle))
     {
     }
+    GPIO.out_w1tc = (1 << LCD_DC); // DC -> 0
     i2s.conf.tx_start = 0; // TX stop
     i2s.conf.tx_reset = 1; // TX reset
     i2s.conf.tx_reset = 0; // TX reset
@@ -96,10 +95,10 @@ static void lcd_send_cmd(uint8_t cmd)
 /*********************************************/
 static void lcd_send_data8n(uint8_t *data, uint8_t len)
 {
-    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     while (!(i2s.state.tx_idle))
     {
     }
+    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     i2s.conf.tx_start = 0; // TX stop
     i2s.conf.tx_reset = 1; // TX reset
     i2s.conf.tx_reset = 0; // TX reset
@@ -117,13 +116,12 @@ static void lcd_send_data8n(uint8_t *data, uint8_t len)
     }
 }
 /********************************************************************/
-
 static void lcd_send_data16(uint16_t data, uint32_t len)
 {
-    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     while (!(i2s.state.tx_idle))
     {
     }
+    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     i2s.conf.tx_start = 0; // TX stop
     i2s.conf.tx_reset = 1; // TX reset
     i2s.conf.tx_reset = 0; // TX reset
@@ -141,13 +139,12 @@ static void lcd_send_data16(uint16_t data, uint32_t len)
     }
 }
 /********************************************************************/
-
 static void lcd_send_data16n(uint16_t *data, uint32_t len)
 {
-    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     while (!(i2s.state.tx_idle))
     {
     }
+    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     i2s.conf.tx_start = 0; // TX stop
     i2s.conf.tx_reset = 1; // TX reset
     i2s.conf.tx_reset = 0; // TX reset

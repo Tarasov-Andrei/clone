@@ -1,8 +1,8 @@
 #include "encoder.h"
 #include "driver/timer.h"
 
-#define BTN_DEBOUNCE 50000    // Антидребезг кнопки, мкс
-#define BTN_LONG_PRESS 600000 // Длител. нажатие кнопки, мкс
+#define BTN_DEBOUNCE (50 * 1000)    // Антидребезг кнопки, мкс
+#define BTN_LONG_PRESS (600 * 1000) // Длител. нажатие кнопки, мкс
 
 volatile static uint8_t enc_state = 0;
 volatile static bool sw_intr_state = 0; // Статус прерывания
@@ -35,17 +35,17 @@ static void isr_event(void *pvParameters)
 static void isr_sw(void *pvParameters)
 {
     sw_intr_state = 1;
-    gpio_intr_disable(GPIO_NUM_36);
-    if (gpio_get_level(GPIO_NUM_36) == 1 && sw_long == 0)
+    gpio_intr_disable(btn_pin);
+    if (gpio_get_level(btn_pin) == 1 && sw_long == 0)
     {
         sw_flag = 1;
     }
-    if (gpio_get_level(GPIO_NUM_36) == 0 && sw_long == 0)
+    if (gpio_get_level(btn_pin) == 0 && sw_long == 0)
     {
         sw_flag = 2;
         bool enc_click();
     }
-    else if (gpio_get_level(GPIO_NUM_36) == 0 && sw_long == 1)
+    else if (gpio_get_level(btn_pin) == 0 && sw_long == 1)
     {
         sw_long = 0;
         sw_flag = 0;
@@ -112,12 +112,18 @@ void encoder(void)
 void encoder_init(uint8_t clk, uint8_t dt, uint8_t sw)
 {
     btn_pin = sw;
+
+    gpio_set_direction(btn_pin, GPIO_MODE_INPUT);
+    gpio_pullup_dis(btn_pin);
+    gpio_pulldown_dis(btn_pin);
+    gpio_set_intr_type(btn_pin, GPIO_INTR_ANYEDGE);
+
     gpio_install_isr_service(0);
     gpio_isr_handler_add(sw, isr_sw, NULL); // Добавить обработчик прерываний кнопки энкодера
 
     pcnt_config_t config_pcnt;
-    config_pcnt.pulse_gpio_num = dt;            // GPIO_NUM_34;
-    config_pcnt.ctrl_gpio_num = clk;            // GPIO_NUM_39;
+    config_pcnt.pulse_gpio_num = dt;
+    config_pcnt.ctrl_gpio_num = clk;
     config_pcnt.pos_mode = PCNT_COUNT_INC;      // При восход. фронте на pulse_gpio_num - инкремент
     config_pcnt.neg_mode = PCNT_COUNT_DIS;      // При нисход. фронте на pulse_gpio_num - не изменять
     config_pcnt.lctrl_mode = PCNT_MODE_REVERSE; // При low на ctrl_gpio_num - инвертировать счетчик
@@ -137,14 +143,8 @@ void encoder_init(uint8_t clk, uint8_t dt, uint8_t sw)
     pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_1, 1); // Уст. значения на прерывание (1)
     pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_THRES_1);
 
-    // pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM);
-    // pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_L_LIM);
-
     pcnt_counter_pause(PCNT_UNIT_0);
     pcnt_counter_clear(PCNT_UNIT_0);
-
-    /* pcnt_isr_register(isr_event, NULL, 0, NULL); // Регистрация обработчика прерываний
-    pcnt_intr_enable(PCNT_UNIT_0); */
 
     pcnt_isr_service_install(0);
     pcnt_isr_handler_add(PCNT_UNIT_0, isr_event, NULL); // Добавить обработчик прерываний энкодера

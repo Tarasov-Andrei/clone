@@ -1,8 +1,6 @@
 #include "lcd_i80_bus.h"
 
-#define PLL_D2_CLK (160 * 1000 * 1000)
-
-
+#define PLL_D2_CLK (160 * 1000 * 1000) // MHz
 
 void print_reg(void)
 {
