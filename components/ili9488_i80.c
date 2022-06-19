@@ -117,8 +117,8 @@ static void lcd_send_data8n(uint8_t *data, uint8_t len)
 /********************************************************************/
 static void lcd_send_data16(uint16_t data, uint32_t len)
 {
-    
-    uint8_t cnt_tx = 0;
+
+    //uint8_t cnt_tx = 0;
     while (!(i2s.state.tx_idle))
     {
     }
