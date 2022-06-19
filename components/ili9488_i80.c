@@ -76,7 +76,23 @@ static uint16_t lcd_h = 0;
 
 static void lcd_send_cmd(uint8_t cmd)
 {
+    GPIO.out_w1tc = (1 << LCD_DC); // DC -> 0
+    i2s.conf.tx_start = 0;         // TX stop
+    i2s.conf.tx_reset = 1;         // TX reset
+    i2s.conf.tx_reset = 0;         // TX reset
+
+    i2s.fifo_conf.tx_fifo_mod = 3; // [1]-16 bit single, [3]-32 bit single
+    i2s.fifo_conf.tx_data_num = 8; // TX Threshold data lenght
+    i2s.sample_rate_conf.tx_bits_mod = 8;
+
+    i2s.fifo_wr = cmd << 16; // Write to FIFO [23:16]
+    i2s.conf.tx_start = 1;   // TX Start
     while (!(i2s.state.tx_idle))
+    {
+    }
+    i2s.conf.tx_start = 0; // TX Start
+
+    /* while (!(i2s.state.tx_idle))
     {
     }
     GPIO.out_w1tc = (1 << LCD_DC); // DC -> 0
@@ -89,13 +105,34 @@ static void lcd_send_cmd(uint8_t cmd)
     i2s.sample_rate_conf.tx_bits_mod = 8;
 
     i2s.fifo_wr = cmd << 16; // Write to FIFO [23:16]
-    i2s.conf.tx_start = 1;   // TX Start
+    i2s.conf.tx_start = 1;   // TX Start */
 }
 /*********************************************/
 static void lcd_send_data8n(uint8_t *data, uint8_t len)
 {
-    
+
+    GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
+    i2s.conf.tx_start = 0;         // TX stop
+    i2s.conf.tx_reset = 1;         // TX reset
+    i2s.conf.tx_reset = 0;         // TX reset
+
+    i2s.fifo_conf.tx_fifo_mod = 3; // [1]-16 bit single, [3]-32 bit single
+    i2s.fifo_conf.tx_data_num = 8; // TX Threshold data lenght
+    i2s.sample_rate_conf.tx_bits_mod = 8;
+
+    i2s.conf.tx_start = 1; // TX Start
+    while (len > 0)
+    {
+        i2s.fifo_wr = *data << 16; // Write to FIFO [23:16]
+        data++;
+        len--;
+    }
     while (!(i2s.state.tx_idle))
+    {
+    }
+    i2s.conf.tx_start = 0; // TX Stop
+
+    /* while (!(i2s.state.tx_idle))
     {
     }
     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
@@ -113,16 +150,12 @@ static void lcd_send_data8n(uint8_t *data, uint8_t len)
         i2s.fifo_wr = *data << 16; // Write to FIFO [23:16]
         data++;
         len--;
-    }
+    } */
 }
 /********************************************************************/
 static void lcd_send_data16(uint16_t data, uint32_t len)
 {
-
-    //uint8_t cnt_tx = 0;
-    while (!(i2s.state.tx_idle))
-    {
-    }
+    uint8_t cnt_tx;
     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     i2s.conf.tx_start = 0;         // TX stop
     i2s.conf.tx_reset = 1;         // TX reset
@@ -131,22 +164,62 @@ static void lcd_send_data16(uint16_t data, uint32_t len)
     i2s.fifo_conf.tx_fifo_mod = 1;  // [1]-16 bit single, [3]-32 bit single
     i2s.fifo_conf.tx_data_num = 16; // TX Threshold data lenght
     i2s.sample_rate_conf.tx_bits_mod = 8;
+    // i2s.fifo_wr = 0;
+    // i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
+    cnt_tx = 0;
+    i2s.conf.tx_start = 1; // TX Start
 
-    i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
-    i2s.conf.tx_start = 1;                      // TX Start
-
-    while (len - 1 > 0)
+    while (len /* - 1  */ > 0)
     {
         i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
+        cnt_tx++;
         len--;
+        if (cnt_tx == 32)
+        {
+            while (!(i2s.state.tx_idle))
+            {
+            }
+            i2s.conf.tx_start = 0; // TX Stop
+            // i2s.conf.tx_fifo_reset = 1;
+            // i2s.conf.tx_fifo_reset = 0;
+            i2s.conf.tx_reset = 1; // TX reset
+            i2s.conf.tx_reset = 0; // TX reset
+                                   // i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
+            i2s.conf.tx_start = 1; // TX Start
+            cnt_tx = 0;
+        }
     }
+    while (!(i2s.state.tx_idle))
+    {
+    }
+    i2s.conf.tx_start = 0; // TX Stop
+
+    // uint8_t cnt_tx = 0;
+    /*  while (!(i2s.state.tx_idle))
+     {
+     }
+     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
+     i2s.conf.tx_start = 0;         // TX stop
+     i2s.conf.tx_reset = 1;         // TX reset
+     i2s.conf.tx_reset = 0;         // TX reset
+
+     i2s.fifo_conf.tx_fifo_mod = 1;  // [1]-16 bit single, [3]-32 bit single
+     i2s.fifo_conf.tx_data_num = 16; // TX Threshold data lenght
+     i2s.sample_rate_conf.tx_bits_mod = 8;
+
+     i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
+     i2s.conf.tx_start = 1;                      // TX Start
+
+     while (len - 1 > 0)
+     {
+         i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
+         len--;
+     } */
 }
 /********************************************************************/
 static void lcd_send_data16n(uint16_t *data, uint32_t len)
 {
-    while (!(i2s.state.tx_idle))
-    {
-    }
+
     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
     i2s.conf.tx_start = 0;         // TX stop
     i2s.conf.tx_reset = 1;         // TX reset
@@ -163,6 +236,30 @@ static void lcd_send_data16n(uint16_t *data, uint32_t len)
         data++;
         len--;
     }
+    while (!(i2s.state.tx_idle))
+    {
+    }
+    i2s.conf.tx_start = 0; // TX Stop
+
+    /*  while (!(i2s.state.tx_idle))
+     {
+     }
+     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
+     i2s.conf.tx_start = 0;         // TX stop
+     i2s.conf.tx_reset = 1;         // TX reset
+     i2s.conf.tx_reset = 0;         // TX reset
+
+     i2s.fifo_conf.tx_fifo_mod = 1;  // [1]-16 bit single, [3]-32 bit single
+     i2s.fifo_conf.tx_data_num = 16; // TX Threshold data lenght
+     i2s.sample_rate_conf.tx_bits_mod = 8;
+
+     i2s.conf.tx_start = 1; // TX Start
+     while (len > 0)
+     {
+         i2s.fifo_wr = (*data << 8) | *data; // Write to FIFO [23:16] + [7:0]
+         data++;
+         len--;
+     } */
 }
 /********************************************************************/
 static void lcd_set_address_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
@@ -313,4 +410,12 @@ void ili9488_i80_init(uint16_t lcd_width, uint16_t lcd_heght)
     esp_rom_delay_us(120 * 1000);
     lcd_send_cmd(ILI9488_DISPON); // Display on
     lcd_send_cmd(ILI9488_RAMWR);
+
+    //lcd_send_data16(0x1a2b, 60);
+    // esp_rom_delay_us(1000);
+    // lcd_send_data16(0x3a4b, 63);
+    // esp_rom_delay_us(1000);
+    // lcd_send_data16(0x6a6b, 64);
+    // esp_rom_delay_us(1000);
+    // lcd_send_data16(0x3a4b, 200);
 }

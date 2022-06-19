@@ -36,7 +36,6 @@ typedef struct
     float temp;
 
 } queue_t;
-
 /******************* CONFIG TIMER *********************/
 static void timer_init_(void)
 {
@@ -69,29 +68,37 @@ void main_task(void *pvParameters)
     while (1)
     {
         encoder();
-       
+
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 /******************* PRINT TASK *****************************/
 void print_task(void *pvParameters)
 {
-    uint16_t wh = 10;
+    uint16_t cnt = 1;
     while (1)
     {
-        if (enc_r())
+        if (cnt == 1)
         {
-            wh += 10;
+            lcd_fill_screen(LCD_RED);
         }
-        if (enc_l())
+        if (cnt == 2)
         {
-            wh -= 10;
+            lcd_fill_screen(LCD_GREEN);
         }
-        // lcd_fill_screen(LCD_BLACK);
-        lcd_fill_rect(0, 0, 300, 300, LCD_BLUE);
+        if (cnt == 3)
+        {
+            lcd_fill_screen(LCD_BLUE);
+        }
+        cnt++;
+        if (cnt == 4)
+        {
+            cnt = 1;
+        }
+        // lcd_fill_rect(0, 0, 300, 300, LCD_BLUE);
         // lcd_fill_screen(LCD_BLUE);
 
-        ESP_LOGW("Encoder", "wh=%u", wh);
+        ESP_LOGW("Encoder", "wh=%u", cnt);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -102,7 +109,7 @@ void app_main(void)
     i2c_init_(21, 22);
     encoder_init(34, 39, 36);
     eeprom_init(I2C_NUM_0);
-    lcd_i80_bus_init(1);
+    lcd_i80_bus_init(8);
     ili9488_i80_init(320, 480);
     lcd_fill_screen(LCD_BLACK);
 
