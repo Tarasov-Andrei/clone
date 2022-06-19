@@ -1,4 +1,4 @@
-/****************** Include ******************/
+/****************** INCLUDE ******************/
 #include "sdkconfig.h"
 #include <stdio.h>
 #include "stdint.h"
@@ -16,7 +16,7 @@
 #include "esp_log.h"
 //#include "driver/i2c.h"
 
-/***************** Custom Include *****************/
+/***************** CUSTOM INCLUDE *****************/
 #include "encoder.h"
 #include "eeprom.h"
 #include "lcd_i80_bus.h"
@@ -67,23 +67,30 @@ void main_task(void *pvParameters)
     while (1)
     {
         encoder();
-        if (enc_r())
-        {
-            cnt++;
-        }
-        if (enc_l())
-        {
-            cnt--;
-        }
+       
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 /******************* PRINT TASK *****************************/
 void print_task(void *pvParameters)
 {
+    uint16_t wh = 10;
+
     while (1)
     {
-        ESP_LOGW("Encoder", "CNT=%u", cnt);
+        if (enc_r())
+        {
+            wh += 10;
+        }
+        if (enc_l())
+        {
+            wh -= 10;
+        }
+        // lcd_fill_screen(LCD_BLACK);
+        lcd_fill_rect(0, 0, 300, 300, LCD_BLUE);
+        // lcd_fill_screen(LCD_BLUE);
+
+        ESP_LOGW("Encoder", "wh=%u", wh);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -96,6 +103,7 @@ void app_main(void)
     eeprom_init(I2C_NUM_0);
     lcd_i80_bus_init(1);
     ili9488_i80_init(320, 480);
+    lcd_fill_screen(LCD_BLACK);
 
     /******************* TASK CREATE *****************************/
     xTaskCreate(main_task, "main_task", 3000, NULL, 1, NULL);
