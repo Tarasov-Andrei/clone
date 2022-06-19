@@ -94,6 +94,7 @@ static void lcd_send_cmd(uint8_t cmd)
 /*********************************************/
 static void lcd_send_data8n(uint8_t *data, uint8_t len)
 {
+    
     while (!(i2s.state.tx_idle))
     {
     }
