@@ -4,7 +4,6 @@
 #include "stdio.h"
 #include "esp_log.h"
 
-
 /************ LCD commands ***************/
 #define ILI9488_PGAMCTRL 0xE0   // Positive gamma control
 #define ILI9488_NGAMCTRL 0xE1   // Negative gamma control
@@ -81,9 +80,9 @@ static void lcd_send_cmd(uint8_t cmd)
     {
     }
     GPIO.out_w1tc = (1 << LCD_DC); // DC -> 0
-    i2s.conf.tx_start = 0; // TX stop
-    i2s.conf.tx_reset = 1; // TX reset
-    i2s.conf.tx_reset = 0; // TX reset
+    i2s.conf.tx_start = 0;         // TX stop
+    i2s.conf.tx_reset = 1;         // TX reset
+    i2s.conf.tx_reset = 0;         // TX reset
 
     i2s.fifo_conf.tx_fifo_mod = 3; // [1]-16 bit single, [3]-32 bit single
     i2s.fifo_conf.tx_data_num = 8; // TX Threshold data lenght
@@ -99,9 +98,9 @@ static void lcd_send_data8n(uint8_t *data, uint8_t len)
     {
     }
     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
-    i2s.conf.tx_start = 0; // TX stop
-    i2s.conf.tx_reset = 1; // TX reset
-    i2s.conf.tx_reset = 0; // TX reset
+    i2s.conf.tx_start = 0;         // TX stop
+    i2s.conf.tx_reset = 1;         // TX reset
+    i2s.conf.tx_reset = 0;         // TX reset
 
     i2s.fifo_conf.tx_fifo_mod = 3; // [1]-16 bit single, [3]-32 bit single
     i2s.fifo_conf.tx_data_num = 8; // TX Threshold data lenght
@@ -118,23 +117,26 @@ static void lcd_send_data8n(uint8_t *data, uint8_t len)
 /********************************************************************/
 static void lcd_send_data16(uint16_t data, uint32_t len)
 {
+    
+    uint8_t cnt_tx = 0;
     while (!(i2s.state.tx_idle))
     {
     }
     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
-    i2s.conf.tx_start = 0; // TX stop
-    i2s.conf.tx_reset = 1; // TX reset
-    i2s.conf.tx_reset = 0; // TX reset
+    i2s.conf.tx_start = 0;         // TX stop
+    i2s.conf.tx_reset = 1;         // TX reset
+    i2s.conf.tx_reset = 0;         // TX reset
 
     i2s.fifo_conf.tx_fifo_mod = 1;  // [1]-16 bit single, [3]-32 bit single
     i2s.fifo_conf.tx_data_num = 16; // TX Threshold data lenght
     i2s.sample_rate_conf.tx_bits_mod = 8;
 
-    i2s.fifo_wr = (data << 8) | data; // Write to FIFO [23:16] + [7:0]
-    i2s.conf.tx_start = 1;            // TX Start
+    i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
+    i2s.conf.tx_start = 1;                      // TX Start
+
     while (len - 1 > 0)
     {
-        i2s.fifo_wr = (data << 8) | data; // Write to FIFO [23:16] + [7:0]
+        i2s.fifo_wr = (uint32_t)(data << 8) | data; // Write to FIFO [23:16] + [7:0]
         len--;
     }
 }
@@ -145,9 +147,9 @@ static void lcd_send_data16n(uint16_t *data, uint32_t len)
     {
     }
     GPIO.out_w1ts = (1 << LCD_DC); // DC -> 1
-    i2s.conf.tx_start = 0; // TX stop
-    i2s.conf.tx_reset = 1; // TX reset
-    i2s.conf.tx_reset = 0; // TX reset
+    i2s.conf.tx_start = 0;         // TX stop
+    i2s.conf.tx_reset = 1;         // TX reset
+    i2s.conf.tx_reset = 0;         // TX reset
 
     i2s.fifo_conf.tx_fifo_mod = 1;  // [1]-16 bit single, [3]-32 bit single
     i2s.fifo_conf.tx_data_num = 16; // TX Threshold data lenght
@@ -165,13 +167,15 @@ static void lcd_send_data16n(uint16_t *data, uint32_t len)
 static void lcd_set_address_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
     lcd_send_cmd(ILI9488_CASET);
-    uint8_t data[] = {0x00, x0, 0x00, x1};
-    lcd_send_data8n(data, 4);
+    uint16_t data[] = {x0, x1};
+    lcd_send_data16n(data, 2);
 
     lcd_send_cmd(ILI9488_RASET);
-    data[1] = y0;
-    data[3] = y1;
-    lcd_send_data8n(data, 4);
+    data[0] = y0;
+    data[1] = y1;
+    // data[2] = y1 >> 8;
+    // data[3] = y1;
+    lcd_send_data16n(data, 2);
 
     lcd_send_cmd(ILI9488_RAMWR);
 }
@@ -194,10 +198,10 @@ void lcd_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color
     lcd_v_line(x1, y0 + 1, y1 - 1, color);
 }
 /********************************************************************/
-void st7735_fill_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
+void lcd_fill_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
 {
     lcd_set_address_window(x0, y0, x1, y1);
-    lcd_send_data16(color, ((x0 + x1 + 1) * (y0 + y1 + 1)) << 4); // w*h*16
+    lcd_send_data16(color, ((x0 + x1 + 1) * (y0 + y1 + 1))); // w*h*16
 }
 /********************************************************************/
 void lcd_fill_screen(uint16_t color)
@@ -307,4 +311,5 @@ void ili9488_i80_init(uint16_t lcd_width, uint16_t lcd_heght)
     lcd_send_cmd(ILI9488_SLPOUT); // Exit sleep
     esp_rom_delay_us(120 * 1000);
     lcd_send_cmd(ILI9488_DISPON); // Display on
+    lcd_send_cmd(ILI9488_RAMWR);
 }
