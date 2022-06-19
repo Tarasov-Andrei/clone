@@ -34,8 +34,9 @@ typedef struct
     uint16_t led_pwm;
     uint16_t press;
     float temp;
-    
+
 } queue_t;
+
 /******************* CONFIG TIMER *********************/
 static void timer_init_(void)
 {
