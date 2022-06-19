@@ -75,7 +75,6 @@ void main_task(void *pvParameters)
 void print_task(void *pvParameters)
 {
     uint16_t wh = 10;
-
     while (1)
     {
         if (enc_r())
